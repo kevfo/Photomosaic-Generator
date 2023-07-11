@@ -26,17 +26,16 @@ func InitDatabase(photoDir string) map[string][3]float64 {
 
 		pic, err := png.Decode(openPhoto)
 		if err != nil {
-			fmt.Printf("Unable to decode the file '%s' \nError: '%s'", photo.Name(), err)
+			fmt.Printf("Unable to decode the file '%s' \nError: '%s'", photoDir+"/"+photo.Name(), err)
 			os.Exit(1)
 		}
-		fmt.Println(processImage(pic))
-		imgDatabase[photoDir+"/"+photo.Name()] = processImage(pic)
+		imgDatabase[photoDir+"/"+photo.Name()] = ProcessImage(pic)
 		fmt.Printf("Done processing: '%s'\n", photoDir+"/"+photo.Name())
 	}
 	return imgDatabase
 }
 
-func processImage(img image.Image) [3]float64 {
+func ProcessImage(img image.Image) [3]float64 {
 	averageRGBA, bounds := [3]float64{0.0, 0.0, 0.0}, img.Bounds()
 	width, height := bounds.Dx(), bounds.Dy()
 	for y := height - 1; y >= 0; y-- {
