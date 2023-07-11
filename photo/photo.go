@@ -8,7 +8,7 @@ import (
 	"os"
 
 	// start module import
-	"../start"
+	"github.com/kevfo/photomosaic_generator/start"
 )
 
 func GenerateMosaic(output string, original image.Image, tileSize int, data map[string][3]float64) {
