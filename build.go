@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	// Custom modules for this project
+	_ "github.com/kevfo/photomosaic_generator/photo"
 	"github.com/kevfo/photomosaic_generator/start"
 )
 
