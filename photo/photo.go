@@ -3,6 +3,7 @@ package photo
 import (
 	"fmt"
 	"image"
+	"image/draw"
 	"image/png"
 	"math"
 	"os"
@@ -11,34 +12,49 @@ import (
 	"github.com/kevfo/photomosaic_generator/start"
 )
 
-func GenerateMosaic(output string, original image.Image, tileSize int, data map[string][3]float64) {
+func GenerateMosaic(output string, original image.Image, tileWidth, tileHeight int, data map[string][3]float64) {
+	fmt.Println("Building the photomosaic now...")
 	oriBounds := original.Bounds()
 	mosaic, height, width := image.NewRGBA(image.Rect(0, 0, oriBounds.Dx(), oriBounds.Dy())), oriBounds.Dy(), oriBounds.Dx()
 
-	for y := height - tileSize; y >= 0; y -= tileSize {
-		for x := 0; x < width; x += tileSize {
-			crop := image.Rect(x, y, x+tileSize, y+tileSize)
-			subImg := original.(interface {
-				SubImage(r image.Rectangle) image.Image
-			}).SubImage(crop).(image.Image)
+	for y := height; y > tileHeight; y -= tileHeight {
+		for x := 0; x < width-tileWidth; x += tileWidth {
+			crop := image.Rect(x, y, x+tileWidth, y-tileHeight)
+			subImg := original.(*image.NRGBA).SubImage(crop)
+			outputImage(subImg, "temp.png")
 
-			tileName := findClosest(start.ProcessImage(subImg), data)
+			// Open the temp image file here:
+			temp, err := os.Open("temp.png")
+			if err != nil {
+				fmt.Printf("An error happened: %s\n", err)
+				os.Exit(1)
+			}
+			defer temp.Close()
+
+			tempImg, err := png.Decode(temp)
+			if err != nil {
+				fmt.Printf("An error happened: %s\n", err)
+				os.Exit(1)
+			}
+			tileName := findClosest(start.ProcessImage(tempImg), data)
 			openTile, err := os.Open(tileName)
 			if err != nil {
 				fmt.Printf("Could not open the following image: '%s'\n", tileName)
 				os.Exit(1)
 			}
+			defer openTile.Close()
+
 			oriTile, err := png.Decode(openTile)
 			if err != nil {
 				fmt.Printf("Could not decode the image '%s'\n", tileName)
 				os.Exit(1)
 			}
-			tile := resizeImage(oriTile, tileSize, tileSize)
+			tile := resizeImage(oriTile, tileWidth, tileHeight)
 
 			// Replacing the image here:
-			for x := crop.Min.X; x < crop.Max.X; x++ {
-				for y := crop.Min.Y; y < crop.Min.Y; y++ {
-					mosaic.Set(x, y, tile.At(x-crop.Min.X, y-crop.Min.Y))
+			for yCrop := y; yCrop < y+tileHeight; yCrop++ {
+				for xCrop := x; xCrop < x+tileWidth; xCrop++ {
+					mosaic.Set(xCrop, yCrop-tileHeight, tile.At(xCrop-x, yCrop-y))
 				}
 			}
 		}
@@ -51,7 +67,7 @@ func distance(a1, a2 [3]float64) float64 {
 }
 
 func findClosest(colors [3]float64, data map[string][3]float64) string {
-	name, closest := "", math.Inf(1)
+	name, closest := "", math.Pow(100, 3)
 	for image, rgbaVal := range data {
 		dist := distance(colors, rgbaVal)
 		if dist < closest {
@@ -67,14 +83,20 @@ func resizeImage(img image.Image, newWidth, newHeight int) image.Image {
 
 	resizedImg := image.NewRGBA(image.Rect(0, 0, newWidth, newHeight))
 	for x := 0; x < newWidth; x++ {
-		for y := 0; x < newHeight; y++ {
+		for y := 0; y < newHeight; y++ {
 			oriX := x * width / newWidth
 			oriY := y * height / newHeight
-			color := img.At(oriX, oriY)
-			resizedImg.Set(x, y, color)
+			resizedImg.Set(x, y, img.At(oriX, oriY))
 		}
 	}
 	return resizedImg
+}
+
+func convertToNRGBA(original image.Image) image.NRGBA {
+	bounds := original.Bounds()
+	newImg := image.NewNRGBA(bounds)
+	draw.Draw(newImg, bounds, original, bounds.Min, draw.Src)
+	return *newImg
 }
 
 func outputImage(img image.Image, fileName string) {
@@ -83,8 +105,11 @@ func outputImage(img image.Image, fileName string) {
 		fmt.Printf("Error creating '%s': %s\n", fileName, err)
 		os.Exit(1)
 	}
+	defer filePath.Close()
+
 	err = png.Encode(filePath, img)
 	if err != nil {
-		fmt.Printf("An error occurred while encoding: ")
+		fmt.Printf("An error occurred while encoding: %s\n", err)
+		os.Exit(1)
 	}
 }
