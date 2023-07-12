@@ -15,7 +15,8 @@ func main() {
 	inputImage := flag.String("img", "image.png", "The name of the image that you want to convert into a photomosaic.")
 	outputName := flag.String("out", "result.png", "The name of the resulting photomosaic.")
 	library := flag.String("lib", "pictures", "The name of a folder of photos that you want to use to construct the photomosaic.")
-	numTiles := flag.Int("tiles", 20, "The size of tiles per row that you want the photomosaic to have.")
+	tileLength := flag.Int("length", 20, "The length of tiles per row that you want the photomosaic to have.")
+	tileHeight := flag.Int("height", 40, "The height of tiles per row that you want the photomosaic to have.")
 	flag.Parse()
 
 	database := start.InitDatabase(*library)
@@ -30,7 +31,7 @@ func main() {
 	if err != nil {
 		fmt.Printf("Unable to decode %s - are you sure %s is a PNG image?", img.Name(), img.Name())
 	}
-	photo.GenerateMosaic(*outputName, toUse, *numTiles+5, *numTiles+20, database)
+	photo.GenerateMosaic(*outputName, toUse, *tileLength, *tileHeight, database)
 
 	// Delete temp files:
 	err = os.Remove("temp.png")
