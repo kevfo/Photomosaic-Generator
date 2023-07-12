@@ -8,7 +8,6 @@ import (
 
 	// Custom modules for this project
 	"github.com/kevfo/photomosaic_generator/photo"
-	_ "github.com/kevfo/photomosaic_generator/photo"
 	"github.com/kevfo/photomosaic_generator/start"
 )
 
@@ -31,7 +30,12 @@ func main() {
 	if err != nil {
 		fmt.Printf("Unable to decode %s - are you sure %s is a PNG image?", img.Name(), img.Name())
 	}
-	photo.GenerateMosaic(*outputName, toUse, *numTiles, database)
+	photo.GenerateMosaic(*outputName, toUse, *numTiles+5, *numTiles+20, database)
 
-	fmt.Println(*inputImage, *outputName, *numTiles)
+	// Delete temp files:
+	err = os.Remove("temp.png")
+	if err != nil {
+		fmt.Printf("An error occurred while ")
+	}
+	fmt.Println("All done!")
 }
