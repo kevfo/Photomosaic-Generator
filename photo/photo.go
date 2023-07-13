@@ -3,7 +3,6 @@ package photo
 import (
 	"fmt"
 	"image"
-	"image/draw"
 	"image/png"
 	"math"
 	"os"
@@ -15,10 +14,11 @@ import (
 func GenerateMosaic(output string, original image.Image, tileWidth, tileHeight int, data map[string][3]float64) {
 	fmt.Println("Building the photomosaic now...")
 	oriBounds := original.Bounds()
-	mosaic, height, width := image.NewRGBA(image.Rect(0, 0, oriBounds.Dx(), oriBounds.Dy())), oriBounds.Dy(), oriBounds.Dx()
+	height, width := oriBounds.Dy()-int(math.Mod(float64(oriBounds.Dy()), float64(tileHeight))), oriBounds.Dx()-int(math.Mod(float64(oriBounds.Dx()), float64(tileWidth)))
+	mosaic := image.NewRGBA(image.Rect(0, 0, width, height))
 
-	for y := height; y > tileHeight; y -= tileHeight {
-		for x := 0; x < width-tileWidth; x += tileWidth {
+	for y := height; y >= tileHeight; y -= tileHeight {
+		for x := 0; x <= width-tileWidth; x += tileWidth {
 			crop := image.Rect(x, y, x+tileWidth, y-tileHeight)
 			subImg := original.(*image.NRGBA).SubImage(crop)
 			outputImage(subImg, "temp.png")
@@ -90,13 +90,6 @@ func resizeImage(img image.Image, newWidth, newHeight int) image.Image {
 		}
 	}
 	return resizedImg
-}
-
-func convertToNRGBA(original image.Image) image.NRGBA {
-	bounds := original.Bounds()
-	newImg := image.NewNRGBA(bounds)
-	draw.Draw(newImg, bounds, original, bounds.Min, draw.Src)
-	return *newImg
 }
 
 func outputImage(img image.Image, fileName string) {
