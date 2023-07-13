@@ -29,14 +29,16 @@ func main() {
 
 	toUse, err := png.Decode(img)
 	if err != nil {
-		fmt.Printf("Unable to decode %s - are you sure %s is a PNG image?", img.Name(), img.Name())
+		fmt.Printf("Unable to decode %s - are you sure %s is a PNG image?\n", img.Name(), img.Name())
+		os.Exit(1)
 	}
 	photo.GenerateMosaic(*outputName, toUse, *tileLength, *tileHeight, database)
 
 	// Delete temp files:
 	err = os.Remove("temp.png")
 	if err != nil {
-		fmt.Printf("An error occurred while ")
+		fmt.Printf("An error occurred while removing 'temp.png': '%s'\n", err)
+		os.Exit(1)
 	}
 	fmt.Println("All done!")
 }
